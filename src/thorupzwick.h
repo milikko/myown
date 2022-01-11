@@ -42,7 +42,7 @@ struct bunchlist {
 
 struct pivs {
   struct pivot_nodes *nodes;
-}
+};
 
 struct prepro {
   struct node *nodes;
