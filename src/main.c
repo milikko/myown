@@ -201,6 +201,223 @@ struct ssp_res *run_opt_dijkstra (struct graph *graph, int u, int v, int n, int 
 	return dijkstra;
 }
 
+struct prepro2 *prepro2 (struct graph *graph, int k)
+{
+	unsigned int n = graph->V;
+	int val = (int) INFINITY;
+	bool empty;
+	struct node *nodes = malloc (n * sizeof (struct node));
+	struct aseq *A[k+1];
+	// k+1, for the kth set where d(A_k, v) = infinity for all v in V
+	struct node *dist[k+1];
+	struct node *pivot_nodes[k+1];
+	struct heap *heap;
+	struct clusterlist *C[k];
+	struct bunchlist *bunchlist = malloc (sizeof (struct bunchlist));
+	struct prepro *prepro = malloc (sizeof (struct prepro));
+
+	bunchlist->num_bunches = n;
+	bunchlist->bunches = malloc (bunchlist->num_bunches * sizeof(struct bunch));
+	bunchlist->bunch_size = 0;
+
+	// saving all v in V in array nodes and Preparing for constructing the bunches
+	for (unsigned int i = 0; i < n; i++) {
+		memcpy (&nodes[i], add_node (i, val, i), sizeof (struct node));
+		bunchlist->bunches[i].v = malloc (sizeof (struct node));
+		memcpy (bunchlist->bunches[i].v, &nodes[i], sizeof(struct node));
+		bunchlist->bunches[i].piv = malloc ((k+1) * sizeof (struct node));
+		memset (&bunchlist->bunches[i].piv[k], 0, sizeof (struct node));
+		// Needed for hashing later, thus NULL
+		bunchlist->bunches[i].nodes = NULL;
+		bunchlist->bunches[i].num_nodes = 0;
+		bunchlist->bunch_size += (sizeof (struct node)) + (k * sizeof (struct node));
+	}
+
+	// Creating all A_i sequences
+	empty = create_aseqs (A, k, graph, nodes);
+
+	// also, since A_{k-1} = Ø, rerun!
+	if (!empty) {
+		FREE (nodes);
+		FREE (bunchlist->bunches->v);
+		FREE (bunchlist->bunches->piv);
+		FREE (bunchlist->bunches);
+		FREE (bunchlist);
+		prepro->nodes = NULL;
+		prepro->bunchlist = NULL;
+		prepro->success = false;
+		prepro->k = -1;
+		return prepro;
+	}
+
+	// d(A_k, v) = infinity, thus NULL
+	dist[k] = NULL;
+	// p_k(v) undefined as A_k = Ø
+	pivot_nodes[k] = NULL;
+
+	// k iterations
+	for (int i = k-1; i >= 0; i--) {
+		// initialising the heap for current i
+		heap = initialise_single_source_tz (graph->V);
+		// copy of graph to work with for current i
+		struct graph *write_graph = copy_graph_struct (graph, heap);
+		// adding source vertex s to G, weight 0 to all other vertices in A_i
+		add_s_node_to_graph (write_graph, A[i]);
+		// adding s node to heap as well to allow computing sp
+		min_heap_insert (heap, write_graph->V, 0, write_graph);
+		write_graph->V += 1;
+		n = write_graph->V;
+
+		// running dijkstra once for each i
+		dist[i] = dijkstra_alg_tz (write_graph, heap);
+		// compute d(A_i, v), finding the pivot elements
+		pivot_nodes[i] = find_pivot (pivot_nodes[i+1], dist[i], n);
+		// Copy the pivot nodes to the piv of bunches
+		for (unsigned int j = 0; j < (n-1); j++) {
+			bunchlist->bunches[j].piv[i] = pivot_nodes[i][j];
+		}
+
+		C[i] = construct_clusters (graph, A, pivot_nodes[i+1], i, k);
+
+		free_graph (write_graph);
+		FREE (dist[i]);
+	}
+
+	construct_bunches (C, k, bunchlist);
+
+	prepro->nodes = nodes;
+	prepro->bunchlist = bunchlist;
+	prepro->success = true;
+	prepro->k = k;
+	prepro->pivot_nodes = pivot_nodes;
+
+	for (int i = 0; i < k; i++) {
+		//FREE (pivot_nodes[i]);
+		FREE (A[i]->added);
+		FREE (A[i]->nodes);
+		FREE (A[i]);
+		FREE (C[i]->clusters);
+		FREE (C[i]);
+	}
+
+	// if no A* uncomment
+	/* free_graph (graph); */
+
+	return prepro;
+}
+
+/**
+ * run_tz - wrapper function for running Thorup-Zwick
+ * @graph: graph with vertices and edges
+ * @k: k integer
+ * @u: source vertex u
+ * @v: target vertex v
+ * Calls Thorup-Zwick algorithm, and measures the spent RAM and CPU time
+ * First it calls prepro, the preprocessing algorithm and then calls dist,
+ * the query algorithm
+ */
+struct tz_res2 *run_tz (struct graph *graph, int k, int u, int v, int n, int m, int query_times)
+{
+	struct tz_res *tz = malloc (sizeof (struct tz_res));
+	struct prepro *pp = malloc (sizeof (struct prepro2));
+	clock_t begin, end;
+
+	tz->dist = 0, tz->dist_time = 0.0;
+	tz->query_times = query_times;
+
+	begin = clock();
+	pp->success = false;
+	while (!pp->success) {
+	  pp = prepro2 (graph, k);
+	}
+	end = clock();
+	tz->prepro_time = (double)(end - begin) / CLOCKS_PER_SEC;
+	tz->prepro_memory_consump = get_vm_peak();
+
+	for (int i = 0; i < tz->query_times; i++) {
+		begin = clock();
+		tz->dist += bdist2 (&pp->nodes[u-offset], &pp->nodes[v-offset], pp->bunchlist);
+		end = clock();
+		tz->dist_time += (double)(end - begin) / CLOCKS_PER_SEC;
+	}
+
+	tz->dist = tz->dist / tz->query_times;
+	tz->dist_time = tz->dist_time / tz->query_times;
+	tz->dist_memory_consump += pp->bunchlist->bunch_size / 1000;
+	tz->k = k;
+
+	printf ("Time spent on prepro k=%d Thorup-Zwick: %f\n", tz->k, tz->prepro_time);
+	printf ("vertices n=%d, edges m=%d\n", n, m);
+	printf ("Memory usage of prepro = %d KB\n", tz->prepro_memory_consump);
+	printf ("Result of Thorup-Zwick dist(%d, %d) = %d\n", u, v, tz->dist);
+	printf ("Time spent on dist Thorup-Zwick: %f sec\n", tz->dist_time);
+	printf ("Query algorithm is executed %d times\n", tz->query_times);
+	printf ("Memory usage of dist (bunch size) = %d KB\n", tz->dist_memory_consump);
+
+	begin = clock();
+	struct ssp_res *test = astar (graph, pp, u-offset, v-offset);
+	end = clock();
+	test->dist = test->S_f[v-offset].sp_est;
+	printf ("Result of A*(%d,%d)=%d in time %f sec\n", u, v, test->dist, ((double)(end - begin) / CLOCKS_PER_SEC));
+	return tz;
+}
+
+/**
+ * run_tz - wrapper function for running Thorup-Zwick
+ * @graph: graph with vertices and edges
+ * @k: k integer
+ * @u: source vertex u
+ * @v: target vertex v
+ * Calls Thorup-Zwick algorithm, and measures the spent RAM and CPU time
+ * First it calls prepro, the preprocessing algorithm and then calls dist,
+ * the query algorithm
+ */
+struct tz_res *run_tz (struct graph *graph, int k, int u, int v, int n, int m, int query_times)
+{
+	struct tz_res *tz = malloc (sizeof (struct tz_res));
+	struct prepro *pp = malloc (sizeof (struct prepro));
+	clock_t begin, end;
+
+	tz->dist = 0, tz->dist_time = 0.0;
+	tz->query_times = query_times;
+
+	begin = clock();
+	pp->success = false;
+	while (!pp->success) {
+	  pp = prepro (graph, k);
+	}
+	end = clock();
+	tz->prepro_time = (double)(end - begin) / CLOCKS_PER_SEC;
+	tz->prepro_memory_consump = get_vm_peak();
+
+	for (int i = 0; i < tz->query_times; i++) {
+		begin = clock();
+		tz->dist += dist (&pp->nodes[u-offset], &pp->nodes[v-offset], pp->bunchlist);
+		end = clock();
+		tz->dist_time += (double)(end - begin) / CLOCKS_PER_SEC;
+	}
+
+	tz->dist = tz->dist / tz->query_times;
+	tz->dist_time = tz->dist_time / tz->query_times;
+	tz->dist_memory_consump += pp->bunchlist->bunch_size / 1000;
+	tz->k = k;
+
+	printf ("Time spent on prepro k=%d Thorup-Zwick: %f\n", tz->k, tz->prepro_time);
+	printf ("vertices n=%d, edges m=%d\n", n, m);
+	printf ("Memory usage of prepro = %d KB\n", tz->prepro_memory_consump);
+	printf ("Result of Thorup-Zwick dist(%d, %d) = %d\n", u, v, tz->dist);
+	printf ("Time spent on dist Thorup-Zwick: %f sec\n", tz->dist_time);
+	printf ("Query algorithm is executed %d times\n", tz->query_times);
+	printf ("Memory usage of dist (bunch size) = %d KB\n", tz->dist_memory_consump);
+
+	begin = clock();
+	struct ssp_res *test = astar (graph, pp, u-offset, v-offset);
+	end = clock();
+	test->dist = test->S_f[v-offset].sp_est;
+	printf ("Result of A*(%d,%d)=%d in time %f sec\n", u, v, test->dist, ((double)(end - begin) / CLOCKS_PER_SEC));
+	return tz;
+}
+
 /**
  * run_tz - wrapper function for running Thorup-Zwick
  * @graph: graph with vertices and edges
