@@ -40,10 +40,14 @@ struct bunchlist {
   size_t bunch_size;
 };
 
+struct pivs {
+  struct pivot_nodes *nodes
+}
+
 struct prepro {
   struct node *nodes;
   struct bunchlist *bunchlist;
-  struct pivot_nodes *nodes;
+  struct pivot_nodes *pivs;
   bool success;
   int k;
 };
