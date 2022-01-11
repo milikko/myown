@@ -43,9 +43,9 @@ struct bunchlist {
 struct prepro {
   struct node *nodes;
   struct bunchlist *bunchlist;
+  int *pivot_nodes *nodes;
   bool success;
   int k;
-  int pivot_nodes *nodes;
 };
 
 struct prepro *prepro (struct graph *graph, int k);
