@@ -492,7 +492,7 @@ struct prepro2 *prepro2 (struct graph *graph, int k)
 	struct heap *heap;
 	struct clusterlist *C[k];
 	struct bunchlist *bunchlist = malloc (sizeof (struct bunchlist));
-	struct prepro *prepro = malloc (sizeof (struct prepro));
+	struct prepro *prepro2 = malloc (sizeof (struct prepro2));
 
 	bunchlist->num_bunches = n;
 	bunchlist->bunches = malloc (bunchlist->num_bunches * sizeof(struct bunch));
