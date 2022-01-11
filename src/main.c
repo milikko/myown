@@ -851,6 +851,7 @@ struct tz_res *run_tz2 (struct graph *graph, int k, int u, int v, int n, int m, 
  * First it calls prepro, the preprocessing algorithm and then calls dist,
  * the query algorithm
  */
+/*
 struct tz_res *run_tz (struct graph *graph, int k, int u, int v, int n, int m, int query_times)
 {
 	struct tz_res *tz = malloc (sizeof (struct tz_res));
@@ -954,3 +955,4 @@ int main (int argc, char *argv[])
 	}
 	return EXIT_SUCCESS;
 }
+*/
