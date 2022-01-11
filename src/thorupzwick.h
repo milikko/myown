@@ -47,6 +47,13 @@ struct pivs {
 struct prepro {
   struct node *nodes;
   struct bunchlist *bunchlist;
+  bool success;
+  int k;
+};
+
+struct prepro2 {
+  struct node *nodes;
+  struct bunchlist *bunchlist;
   struct pivs *pivs;
   bool success;
   int k;
