@@ -201,7 +201,7 @@ struct ssp_res *run_opt_dijkstra (struct graph *graph, int u, int v, int n, int 
 	return dijkstra;
 }
 
-struct prepro2 *prepro2 (struct graph *graph, int k)
+struct prepro2 *prepro (struct graph *graph, int k)
 {
 	unsigned int n = graph->V;
 	int val = (int) INFINITY;
