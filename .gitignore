@@ -1,0 +1,4 @@
+/benchmarks/*debug*
+/bin
+*.csv
+*.txt
