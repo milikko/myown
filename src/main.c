@@ -726,6 +726,7 @@ struct prepro *prepro2 (struct graph *graph, int k)
 		prepro->bunchlist = NULL;
 		prepro->success = false;
 		prepro->k = -1;
+		prepro->pivs = NULL;
 		return prepro;
 	}
 
@@ -768,7 +769,7 @@ struct prepro *prepro2 (struct graph *graph, int k)
 	prepro->bunchlist = bunchlist;
 	prepro->success = true;
 	prepro->k = k;
-	prepro->pivot_nodes = pivot_nodes;
+	prepro->pivs = pivot_nodes;
 
 	for (int i = 0; i < k; i++) {
 		//FREE (pivot_nodes[i]);

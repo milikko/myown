@@ -47,7 +47,7 @@ struct pivs {
 struct prepro {
   struct node *nodes;
   struct bunchlist *bunchlist;
-  struct pivot_nodes *pivs;
+  struct pivs *pivs;
   bool success;
   int k;
 };
