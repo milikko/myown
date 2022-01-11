@@ -45,7 +45,7 @@ struct prepro {
   struct bunchlist *bunchlist;
   bool success;
   int k;
-  int pivot_nodes [k * 8];
+  int pivot_nodes *nodes;
 };
 
 struct prepro *prepro (struct graph *graph, int k);
