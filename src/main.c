@@ -318,7 +318,7 @@ struct prepro2 *prepro (struct graph *graph, int k)
  */
 struct tz_res2 *run_tz (struct graph *graph, int k, int u, int v, int n, int m, int query_times)
 {
-	struct tz_res *tz = malloc (sizeof (struct tz_res));
+	struct tz_res *tz = malloc (sizeof (struct tz_res2));
 	struct prepro *pp = malloc (sizeof (struct prepro2));
 	clock_t begin, end;
 
