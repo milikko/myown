@@ -201,7 +201,7 @@ struct ssp_res *run_opt_dijkstra (struct graph *graph, int u, int v, int n, int 
 	return dijkstra;
 }
 
-struct prepro2 *prepro (struct graph *graph, int k)
+struct prepro *prepro2 (struct graph *graph, int k)
 {
 	unsigned int n = graph->V;
 	int val = (int) INFINITY;
@@ -316,10 +316,10 @@ struct prepro2 *prepro (struct graph *graph, int k)
  * First it calls prepro, the preprocessing algorithm and then calls dist,
  * the query algorithm
  */
-struct tz_res2 *run_tz (struct graph *graph, int k, int u, int v, int n, int m, int query_times)
+struct tz_res *run_tz2 (struct graph *graph, int k, int u, int v, int n, int m, int query_times)
 {
-	struct tz_res *tz = malloc (sizeof (struct tz_res2));
-	struct prepro *pp = malloc (sizeof (struct prepro2));
+	struct tz_res *tz = malloc (sizeof (struct tz_res));
+	struct prepro *pp = malloc (sizeof (struct prepro));
 	clock_t begin, end;
 
 	tz->dist = 0, tz->dist_time = 0.0;
@@ -336,7 +336,7 @@ struct tz_res2 *run_tz (struct graph *graph, int k, int u, int v, int n, int m, 
 
 	for (int i = 0; i < tz->query_times; i++) {
 		begin = clock();
-		tz->dist += bdist2 (&pp->nodes[u-offset], &pp->nodes[v-offset], pp->bunchlist);
+		tz->dist += dist (&pp->nodes[u-offset], &pp->nodes[v-offset], pp->bunchlist);
 		end = clock();
 		tz->dist_time += (double)(end - begin) / CLOCKS_PER_SEC;
 	}
