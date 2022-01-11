@@ -43,7 +43,7 @@ struct bunchlist {
 struct prepro {
   struct node *nodes;
   struct bunchlist *bunchlist;
-  int *pivot_nodes *nodes;
+  struct pivot_nodes *nodes;
   bool success;
   int k;
 };
