@@ -479,7 +479,7 @@ bool create_aseqs (struct aseq **A, int k, struct graph *graph, struct node *nod
 	return true;
 }
 
-struct prepro *prepro2 (struct graph *graph, int k)
+struct prepro2 *prepro2 (struct graph *graph, int k)
 {
 	unsigned int n = graph->V;
 	int val = (int) INFINITY;
