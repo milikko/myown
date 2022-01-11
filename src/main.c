@@ -1,4 +1,5 @@
 #include "main.h"
+#include "thorupzwick.h"
 
 /*
   indicates whether the algorithms works with 1 or 0 indexed data.
@@ -200,8 +201,6 @@ struct ssp_res *run_opt_dijkstra (struct graph *graph, int u, int v, int n, int 
 
 	return dijkstra;
 }
-
-#include "thorupzwick.h"
 
 void pp_aseqs (struct aseq **A, int k)
 {
