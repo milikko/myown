@@ -898,62 +898,6 @@ struct tz_res *run_tz (struct graph *graph, int k, int u, int v, int n, int m, i
 	return tz;
 }
 
-/**
- * run_tz - wrapper function for running Thorup-Zwick
- * @graph: graph with vertices and edges
- * @k: k integer
- * @u: source vertex u
- * @v: target vertex v
- * Calls Thorup-Zwick algorithm, and measures the spent RAM and CPU time
- * First it calls prepro, the preprocessing algorithm and then calls dist,
- * the query algorithm
- */
-struct tz_res *run_tz (struct graph *graph, int k, int u, int v, int n, int m, int query_times)
-{
-	struct tz_res *tz = malloc (sizeof (struct tz_res));
-	struct prepro *pp = malloc (sizeof (struct prepro));
-	clock_t begin, end;
-
-	tz->dist = 0, tz->dist_time = 0.0;
-	tz->query_times = query_times;
-
-	begin = clock();
-	pp->success = false;
-	while (!pp->success) {
-	  pp = prepro (graph, k);
-	}
-	end = clock();
-	tz->prepro_time = (double)(end - begin) / CLOCKS_PER_SEC;
-	tz->prepro_memory_consump = get_vm_peak();
-
-	for (int i = 0; i < tz->query_times; i++) {
-		begin = clock();
-		tz->dist += dist (&pp->nodes[u-offset], &pp->nodes[v-offset], pp->bunchlist);
-		end = clock();
-		tz->dist_time += (double)(end - begin) / CLOCKS_PER_SEC;
-	}
-
-	tz->dist = tz->dist / tz->query_times;
-	tz->dist_time = tz->dist_time / tz->query_times;
-	tz->dist_memory_consump += pp->bunchlist->bunch_size / 1000;
-	tz->k = k;
-
-	printf ("Time spent on prepro k=%d Thorup-Zwick: %f\n", tz->k, tz->prepro_time);
-	printf ("vertices n=%d, edges m=%d\n", n, m);
-	printf ("Memory usage of prepro = %d KB\n", tz->prepro_memory_consump);
-	printf ("Result of Thorup-Zwick dist(%d, %d) = %d\n", u, v, tz->dist);
-	printf ("Time spent on dist Thorup-Zwick: %f sec\n", tz->dist_time);
-	printf ("Query algorithm is executed %d times\n", tz->query_times);
-	printf ("Memory usage of dist (bunch size) = %d KB\n", tz->dist_memory_consump);
-
-	begin = clock();
-	struct ssp_res *test = astar (graph, pp, u-offset, v-offset);
-	end = clock();
-	test->dist = test->S_f[v-offset].sp_est;
-	printf ("Result of A*(%d,%d)=%d in time %f sec\n", u, v, test->dist, ((double)(end - begin) / CLOCKS_PER_SEC));
-	return tz;
-}
-
 int main (int argc, char *argv[])
 {
 
