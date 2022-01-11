@@ -1,5 +1,4 @@
 #include "main.h"
-#include "thorupzwick.h"
 
 /*
   indicates whether the algorithms works with 1 or 0 indexed data.
